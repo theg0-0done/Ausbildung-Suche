@@ -12,7 +12,6 @@ import {
 interface ActiveFiltersProps {
   filters: JobFilters;
   onRemove: (key: keyof JobFilters, value?: string) => void;
-  onClearAll: () => void;
 }
 
 interface Chip {
@@ -74,7 +73,7 @@ function buildChips(filters: JobFilters): Chip[] {
   return chips;
 }
 
-export default function ActiveFilters({ filters, onRemove, onClearAll }: ActiveFiltersProps) {
+export default function ActiveFilters({ filters, onRemove }: ActiveFiltersProps) {
   const chips = buildChips(filters);
   if (chips.length === 0) return null;
 
@@ -96,11 +95,6 @@ export default function ActiveFilters({ filters, onRemove, onClearAll }: ActiveF
             </svg>
           </button>
         ))}
-        {chips.length > 1 && (
-          <button type="button" className="filter-clear-all" onClick={onClearAll}>
-            Alle löschen
-          </button>
-        )}
       </div>
     </div>
   );

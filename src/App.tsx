@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import SearchPage from './pages/SearchPage';
 import DetailPage from './pages/DetailPage';
+import Splash from './components/Splash';
 
 /** Read the refnr query param from the current URL */
 function getRefnrFromUrl(): string {
@@ -43,6 +44,8 @@ export default function App() {
 
   return (
     <div className="app">
+      <Splash />
+
       {/* Navbar */}
       <nav className="navbar">
         <a href="/" className="navbar-brand" onClick={(e) => { e.preventDefault(); navigateToSearch(); }}>

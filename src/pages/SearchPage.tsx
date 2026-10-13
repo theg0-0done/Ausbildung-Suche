@@ -213,6 +213,7 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
   const reachable = Math.min(total, MAX_REACHABLE_RESULTS);
   const hasMore = results.length < reachable && page * PAGE_SIZE < MAX_REACHABLE_RESULTS;
   const activeCount = countActiveFilters(filters);
+  const hasAnyFilter = activeCount > 0 || !!filters.was?.trim() || !!filters.wo?.trim();
 
   // ---- filters that run in the browser ----
   const payActive = filters.minVerguetung !== undefined;
@@ -324,6 +325,7 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
               </div>
             </div>
 
+            <div className="results-count-row">
             <h2 className="results-count" aria-live="polite">
               {searched && !loading && !error && (
                 clientFiltering ? (
@@ -340,13 +342,15 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
                 )
               )}
             </h2>
+            {hasAnyFilter && (
+              <button type="button" className="filter-clear-all" onClick={handleClearAllFilters}>
+                Alle löschen
+              </button>
+            )}
+            </div>
           </div>
 
-          <ActiveFilters
-            filters={filters}
-            onRemove={handleRemoveFilter}
-            onClearAll={handleClearAllFilters}
-          />
+          <ActiveFilters filters={filters} onRemove={handleRemoveFilter} />
 
           {scanning && !loading && (
             <p className="location-note info scan-note" role="status">

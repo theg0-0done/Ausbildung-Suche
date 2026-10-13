@@ -49,11 +49,13 @@ export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
   const typeLabel = getTypeLabel(job);
   const workingTime = getWorkingTime(job);
   const pay = getPayLabel(job);
+  const fresh = isNew(job);
 
   return (
-    <article className="job-card" onClick={() => onClick(job)} tabIndex={0} role="button"
+    <article className={`job-card ${fresh ? 'is-new' : ''}`} onClick={() => onClick(job)} tabIndex={0} role="button"
       onKeyDown={(e) => { if (e.key === 'Enter') onClick(job); }}
     >
+      {fresh && <span className="card-badge-new">Neu</span>}
       <div className="job-card-logo">
         {logoUrl && !logoFailed ? (
           <img
@@ -72,7 +74,6 @@ export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
         <h3 className="job-card-title">{job.stellenangebotsTitel || job.hauptberuf}</h3>
         <p className="job-card-company">{employer}</p>
         <div className="job-card-tags">
-          {isNew(job) && <span className="chip chip-new">Neu</span>}
           {typeLabel && <span className="chip chip-type">{typeLabel}</span>}
           {workingTime && <span className="chip">{workingTime}</span>}
           {pay && (
