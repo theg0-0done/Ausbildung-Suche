@@ -52,6 +52,36 @@ describe('proxyRequest', () => {
     expect(res.headers.get('content-type')).toBe('image/webp');
   });
 
+  it('understands the Vercel rewrite form (?path=a/b/c) and keeps the other query parameters', async () => {
+    const upstream = vi.fn().mockResolvedValue(ok());
+    await proxyRequest(
+      new Request('https://app.test/api/proxy?path=jobboerse/jobsuche-service/pc/v6/jobs&angebotsart=4&arbeitszeit=vz%3Btz'),
+      upstream
+    );
+    expect((upstream.mock.calls[0] as [string])[0]).toBe(
+      'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v6/jobs?angebotsart=4&arbeitszeit=vz%3Btz'
+    );
+  });
+
+  it('keeps the Base64 padding encoded whether or not the platform decoded it', async () => {
+    const upstream = vi.fn().mockResolvedValue(ok());
+    const expected = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobdetails/MTAwMDAtMQ%3D%3D';
+    await proxyRequest(new Request('https://app.test/api/proxy?path=jobboerse/jobsuche-service/pc/v4/jobdetails/MTAwMDAtMQ%3D%3D'), upstream);
+    await proxyRequest(new Request('https://app.test/api/proxy?path=jobboerse/jobsuche-service/pc/v4/jobdetails/MTAwMDAtMQ=='), upstream);
+    expect((upstream.mock.calls[0] as [string])[0]).toBe(expected);
+    expect((upstream.mock.calls[1] as [string])[0]).toBe(expected);
+  });
+
+  it('refuses dot segments', async () => {
+    const upstream = vi.fn();
+    const res = await proxyRequest(
+      new Request('https://app.test/api/proxy?path=jobboerse/jobsuche-service/../../secret'),
+      upstream
+    );
+    expect(res.status).toBe(404);
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
   it('refuses other hosts paths, so it is not an open relay', async () => {
     const upstream = vi.fn();
     const res = await proxyRequest(new Request('https://app.test/api/some/other/service'), upstream);
