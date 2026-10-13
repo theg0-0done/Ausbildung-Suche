@@ -27,6 +27,8 @@ export default function RichContentRenderer({ content, className = '' }: RichCon
     // Pre-process to detect tagline-like isolated lines (only if not raw HTML)
     let processedContent = content;
     if (!looksLikeHtml) {
+      // The API sends bullets as " * item" (indented), which Markdown would not treat as a list
+      processedContent = processedContent.replace(/^[^\S\r\n]*[*•][^\S\r\n]+/gm, '- ');
       processedContent = processedContent
         .split(/\n{2,}/)
         .map((chunk) => {

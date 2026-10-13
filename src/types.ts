@@ -1,56 +1,84 @@
-// ---- Search API response types (/v4/jobs) ----
-
-export interface Koordinaten {
-  lat: number;
-  lon: number;
-}
+// ---- Search API response types (/v6/jobs) ----
 
 export interface JobFilters {
   was?: string;
   wo?: string;
   umkreis?: string;
-  veroeffentlichtseit?: string;
+  /** Days; several values are allowed but the API only needs the largest (ranges are nested) */
+  veroeffentlichtseit?: string[];
   arbeitszeit?: string[];
   angebotsart?: string;
   befristung?: string;
-  berufsfeld?: string;
+  berufsfeld?: string[];
+  beruf?: string[];
   arbeitgeber?: string;
+  /** 'false' hides temp-agency listings */
   zeitarbeit?: string;
   pav?: string;
+  /** 'true' = only listings suitable for people with disabilities */
   behinderung?: string;
-  // Client-side sub-filter for angebotsart=4
+  /** 1 ohne Abschluss … 5 Abitur: listings open to someone with that school level */
+  schulbildung?: string;
+  /** Start month range as returned by the facets, e.g. 26_10_01-26_11_01 */
+  eintrittsdatum?: string[];
+  /** 'false' hides listings that come from other job boards */
+  externestellenboersen?: string;
+  /**
+   * Client-side only (the API cannot filter by pay): minimum first-year pay in €.
+   * Presence of the key switches the filter on; '0' means "any pay stated".
+   */
+  minVerguetung?: string;
+  /** Client-side only: 'true' keeps offers whose description contains an e-mail address. */
+  mitEmail?: string;
+  /** Server-side for angebotsart=4: 0 Ausbildung, 1 ausbildungsintegrierend, 2 praxisintegrierend */
   ausbildungsart?: string;
 }
 
-export interface Arbeitsort {
-  ort: string;
-  plz: string;
-  strasse?: string;
-  region: string;
-  land: string;
-  koordinaten?: Koordinaten;
+export interface Facet {
+  counts: Record<string, number>;
+  maxCount?: number;
 }
 
+export type Facets = Record<string, Facet | undefined>;
+
+export interface WoOutput {
+  bereinigterOrt?: string;
+  suchmodus?: string;
+  koordinaten?: { lat: number; lon: number }[];
+}
+
+/** One search hit from /pc/v6/jobs. Same shape as the detail payload, minus the long description. */
 export interface JobSearchItem {
-  beruf: string;
-  titel: string;
-  refnr: string;
-  arbeitsort: Arbeitsort;
-  arbeitgeber: string;
-  aktuelleVeroeffentlichungsdatum: string;
-  modifikationsTimestamp: string;
-  eintrittsdatum: string;
-  kundennummerHash: string;
+  stellenangebotsart?: string;
   ausbildungsart?: string;
-  // Allow extra fields from the search response we haven't typed
+  studienform?: string;
+  studiengang?: string;
+  stellenangebotsTitel?: string;
+  hauptberuf?: string;
+  firma?: string;
+  arbeitgeberKundennummerHash?: string;
+  referenznummer: string;
+  stellenlokationen?: Stellenlokation[];
+  eintrittszeitraum?: Eintrittszeitraum;
+  entfernung?: number;
+  alleBerufe?: string[];
+  ausbildungsverguetungJahr1?: number;
+  ausbildungsverguetungJahr2?: number;
+  ausbildungsverguetungJahr3?: number;
+  ausbildungsverguetungJahr4?: number;
+  festgehalt?: number;
+  gehaltsspanneVon?: number;
+  gehaltsspanneBis?: number;
   [key: string]: unknown;
 }
 
 export interface SearchResponse {
-  stellenangebote: JobSearchItem[];
+  ergebnisliste: JobSearchItem[];
   maxErgebnisse: number;
   page: number;
   size: number;
+  facetten?: Facets;
+  woOutput?: WoOutput;
 }
 
 // ---- Detail API response types (/v4/jobdetails) ----

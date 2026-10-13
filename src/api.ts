@@ -1,63 +1,61 @@
-import type { SearchResponse, JobDetail, JobFilters } from './types';
+import type { SearchResponse, JobDetail, JobFilters, JobSearchItem } from './types';
+import { parseSearchResponse } from './schemas';
+import { buildSearchParams, PAGE_SIZE } from './lib/filters';
 
 const PROXY_BASE = '/api/jobboerse/jobsuche-service';
+const SEARCH_VERSION = 'v6';
+
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+async function failWith(res: Response, what: string, url: string): Promise<never> {
+  const body = (await res.text().catch(() => '')).slice(0, 200);
+  console.error(`${what} failed`, res.status, url, body);
+  throw new ApiError(`${what} failed: ${res.status} ${res.statusText}${body ? ` – ${body}` : ''}`, res.status);
+}
 
 /**
  * Search for Ausbildung (apprenticeship) offers using full filters.
+ * Pass an AbortSignal so a newer search can cancel an older one.
  */
 export async function searchAusbildungen(
   filters: JobFilters,
   page = 1,
-  size = 25
+  size = PAGE_SIZE,
+  signal?: AbortSignal
 ): Promise<SearchResponse> {
-  const params = new URLSearchParams({
-    angebotsart: filters.angebotsart || '4', // Default to Ausbildung
-    page: String(page),
-    size: String(size),
-  });
+  const url = `${PROXY_BASE}/pc/${SEARCH_VERSION}/jobs?${buildSearchParams(filters, page, size)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) return failWith(res, 'Search', url);
+  return parseSearchResponse(await res.json());
+}
 
-  // Basic filters
-  if (filters.was?.trim()) params.set('was', filters.was.trim());
-  if (filters.wo?.trim()) params.set('wo', filters.wo.trim());
-  if (filters.umkreis) params.set('umkreis', filters.umkreis);
-  
-  // Specific API mappings
-  if (filters.veroeffentlichtseit) params.set('veroeffentlichtseit', filters.veroeffentlichtseit);
-  if (filters.befristung) params.set('befristung', filters.befristung);
-  if (filters.berufsfeld) params.set('berufsfeld', filters.berufsfeld);
-  if (filters.arbeitgeber?.trim()) params.set('arbeitgeber', filters.arbeitgeber.trim());
-  if (filters.zeitarbeit) params.set('zeitarbeit', filters.zeitarbeit);
-  if (filters.pav) params.set('pav', filters.pav);
-  if (filters.behinderung) params.set('behinderung', filters.behinderung);
-
-  // Array joined by semicolon
-  if (filters.arbeitszeit && filters.arbeitszeit.length > 0) {
-    params.set('arbeitszeit', filters.arbeitszeit.join(';'));
-  }
-
-  const res = await fetch(`${PROXY_BASE}/pc/v4/jobs?${params}`);
-
-  if (!res.ok) {
-    throw new Error(`Search failed: ${res.status} ${res.statusText}`);
-  }
-
-  return res.json();
+/** Other Ausbildung offers of the same employer (exact employer name), without the current one. */
+export async function fetchEmployerJobs(
+  employer: string,
+  excludeRefnr: string,
+  signal?: AbortSignal
+): Promise<JobSearchItem[]> {
+  const data = await searchAusbildungen({ arbeitgeber: employer }, 1, 7, signal);
+  return data.ergebnisliste.filter((j) => j.referenznummer !== excludeRefnr).slice(0, 6);
 }
 
 /**
  * Fetch the full job detail by refnr.
  * The /pc/v4/jobdetails/ endpoint expects a Base64-encoded refnr as the path.
  */
-export async function fetchJobDetail(refnr: string): Promise<JobDetail> {
+export async function fetchJobDetail(refnr: string, signal?: AbortSignal): Promise<JobDetail> {
   const encoded = btoa(refnr);
-  const res = await fetch(
-    `${PROXY_BASE}/pc/v4/jobdetails/${encodeURIComponent(encoded)}`
-  );
-
-  if (!res.ok) {
-    throw new Error(`Detail fetch failed: ${res.status} ${res.statusText}`);
-  }
-
+  const url = `${PROXY_BASE}/pc/v4/jobdetails/${encodeURIComponent(encoded)}`;
+  const res = await fetch(url, { signal });
+  if (!res.ok) return failWith(res, 'Detail fetch', url);
   return res.json();
 }
 

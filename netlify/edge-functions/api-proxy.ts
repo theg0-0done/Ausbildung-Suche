@@ -10,6 +10,8 @@ export default async function handler(req: Request) {
   headers.set("X-API-Key", "jobboerse-jobsuche");
   // Remove host header so it doesn't conflict
   headers.delete("host");
+  // Oversized cookies make the upstream Tomcat answer 400
+  headers.delete("cookie");
 
   try {
     const response = await fetch(targetUrl, {
