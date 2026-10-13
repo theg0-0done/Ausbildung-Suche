@@ -71,5 +71,6 @@ export function getLogoUrl(hash: string): string {
  * Builds the public Arbeitsagentur job listing URL from a refnr.
  */
 export function getJobUrl(refnr: string): string {
-  return `https://www.arbeitsagentur.de/jobsuche/suche?id=${encodeURIComponent(refnr)}&angebotsart=4`;
+  // /suche?id=… only opens the generic result list; /jobdetail/… is the offer itself
+  return `https://www.arbeitsagentur.de/jobsuche/jobdetail/${encodeURIComponent(refnr)}`;
 }

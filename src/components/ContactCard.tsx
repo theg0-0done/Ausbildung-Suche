@@ -9,6 +9,7 @@ const ZERO_WIDTH_SPACE = String.fromCharCode(0x200b);
 
 interface ContactCardProps {
   contact: ContactInfo;
+  className?: string;
 }
 
 interface RowProps {
@@ -48,7 +49,7 @@ function ContactRow({ icon, label, href, copied, onCopy, copyValue }: RowProps) 
  * Sidebar block with everything the description states about who to contact: named people
  * (with their own number when the text gives one), further phone numbers and e-mail addresses.
  */
-export default function ContactCard({ contact }: ContactCardProps) {
+export default function ContactCard({ contact, className = '' }: ContactCardProps) {
   const [copied, setCopied] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);
 
@@ -72,7 +73,7 @@ export default function ContactCard({ contact }: ContactCardProps) {
   if (contact.people.length === 0 && loosePhones.length === 0 && contact.emails.length === 0) return null;
 
   return (
-    <section className="detail-card aside-card" aria-label="Kontakt">
+    <section className={`detail-card aside-card ${className}`} aria-label="Kontakt">
       <h2 className="aside-title">Kontakt</h2>
 
       {contact.people.length > 0 && (

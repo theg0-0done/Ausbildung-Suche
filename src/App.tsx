@@ -43,22 +43,12 @@ export default function App() {
   }, []);
 
   return (
-    <div className="app">
+    <div className={`app ${activeRefnr ? 'is-detail' : ''}`}>
       <Splash />
 
       {/* Navbar */}
       <nav className="navbar">
         <a href="/" className="navbar-brand" onClick={(e) => { e.preventDefault(); navigateToSearch(); }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#navGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <defs>
-              <linearGradient id="navGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0f766e" />
-                <stop offset="100%" stopColor="#14b8a6" />
-              </linearGradient>
-            </defs>
-            <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
-          </svg>
           <span>Ausbildungs<span className="gradient-text">Suche</span></span>
         </a>
       </nav>

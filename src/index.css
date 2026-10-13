@@ -4213,3 +4213,85 @@ html {
     font-size: 0.78rem;
   }
 }
+
+/* ========================================================
+   LISTING PAGE ON PHONES: no navbar, floating back arrow,
+   full-width header card, blocks in reading order
+   ======================================================== */
+@media (max-width: 600px) {
+  /* The site bar is only for the search page; the listing has its own back arrow */
+  .app.is-detail .navbar {
+    display: none;
+  }
+
+  .detail-page .back-btn {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 0.6rem);
+    left: 0.7rem;
+    z-index: 120;
+    width: 42px;
+    height: 42px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    backdrop-filter: saturate(180%) blur(12px);
+    box-shadow: 0 2px 10px rgba(10, 30, 28, 0.18);
+  }
+
+  .detail-page .back-label {
+    display: none;
+  }
+
+  /* Header card: edge to edge, flush with the top of the screen */
+  .detail-page {
+    padding-top: 0;
+  }
+
+  .detail-hero-card {
+    margin: 0 calc(-1 * var(--page-px)) 1rem;
+    border-radius: 0;
+    border-width: 0 0 1px;
+    box-shadow: none;
+  }
+
+  .detail-hero-body {
+    padding: 0 var(--page-px) 1rem;
+  }
+
+  /* Reading order: contact, at a glance, pay, description, employer, more offers */
+  .detail-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .detail-main,
+  .detail-aside {
+    display: contents;
+  }
+
+  .block-contact { order: 1; }
+  .block-facts { order: 2; }
+  .block-pay { order: 3; }
+  .block-description { order: 4; }
+  .block-locations { order: 5; }
+  .block-employer { order: 6; }
+  .block-offers { order: 7; }
+  .block-extra { order: 8; }
+}
+
+@media (max-width: 600px) {
+  /* The grid layout's align-items: start would shrink the cards to their content in the column */
+  .detail-layout {
+    align-items: stretch;
+  }
+
+  /* No inner padding: banner and logo row run to the card edges (text keeps a small side inset) */
+  .detail-hero-card {
+    padding: 0;
+  }
+}

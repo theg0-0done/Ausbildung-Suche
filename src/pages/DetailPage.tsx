@@ -8,6 +8,7 @@ import { DetailSkeleton, JobCardSkeleton } from '../components/Skeletons';
 import DetailSection from '../components/DetailSection';
 import ContactCard from '../components/ContactCard';
 import { extractContact } from '../lib/contact';
+import { pickCompanyUrl, resolveApplyUrl } from '../lib/apply';
 import RichContentRenderer from '../components/RichContentRenderer';
 import RecursiveFieldRenderer from '../components/RecursiveFieldRenderer';
 
@@ -85,11 +86,6 @@ const VERTRAGSDAUER_MAP: Record<string, string> = {
   BEFRISTET: 'Befristet',
   UNBEFRISTET: 'Unbefristet',
 };
-
-/** The API sometimes returns bare hosts like "www.firma.de" – make them absolute. */
-function toAbsoluteUrl(u: string): string {
-  return /^https?:\/\//i.test(u) ? u : `https://${u}`;
-}
 
 const ICON_EXTERNAL = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -222,12 +218,9 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
     ? BILDUNGSABSCHLUSS_MAP[d.geforderterBildungsabschluss] || d.geforderterBildungsabschluss
     : undefined;
 
-  const applyUrl = (() => {
-    const raw = [d.externeUrl, d.externeURL, d.allianzpartnerUrl].find(
-      (v): v is string => typeof v === 'string' && v.trim() !== ''
-    );
-    return raw ? toAbsoluteUrl(raw.trim()) : jobUrl;
-  })();
+  // The employer's own link when the offer has one; otherwise the offer page on arbeitsagentur.de
+  const applyUrl = resolveApplyUrl([d.externeUrl, d.externeURL, d.allianzpartnerUrl], jobUrl);
+  const companyUrl = pickCompanyUrl([d.allianzpartnerUrl]);
 
   const typeLabel = [
     d.ausbildungsart ? ART_MAP[d.ausbildungsart] ?? d.ausbildungsart : 'Ausbildung',
@@ -258,9 +251,9 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
   const showEmployerJobs = !!employerName && (employerJobs === null || employerJobs.length > 0);
 
   const backButton = (
-    <button className="back-btn" onClick={onBack}>
+    <button className="back-btn" onClick={onBack} aria-label="Zurück zur Suche">
       {ICON_BACK}
-      Zurück zur Suche
+      <span className="back-label">Zurück zur Suche</span>
     </button>
   );
 
@@ -356,7 +349,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
       <div className="detail-layout">
         <div className="detail-main">
           {d.stellenangebotsBeschreibung && (
-            <article className="detail-card">
+            <article className="detail-card block-description">
               <DetailSection title="Über die Ausbildung">
                 <RichContentRenderer content={d.stellenangebotsBeschreibung} />
               </DetailSection>
@@ -364,7 +357,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
           )}
 
           {d.stellenlokationen && d.stellenlokationen.length > 1 && (
-            <article className="detail-card">
+            <article className="detail-card block-locations">
               <DetailSection title="Weitere Arbeitsorte">
                 <div className="extra-locations">
                   {d.stellenlokationen.slice(1).map((loc, i) => {
@@ -385,7 +378,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
           )}
 
           {showEmployerJobs && (
-            <article className="detail-card">
+            <article className="detail-card block-offers">
               <DetailSection title={`Weitere Angebote von ${employerName}`}>
                 <div className="results-grid">
                   {employerJobs === null ? (
@@ -404,7 +397,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
           )}
 
           {Object.keys(remaining).length > 0 && (
-            <article className="detail-card">
+            <article className="detail-card block-extra">
               <DetailSection title="Weitere Informationen" className="extra-section">
                 <RecursiveFieldRenderer data={remaining} />
               </DetailSection>
@@ -413,10 +406,10 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
         </div>
 
         <aside className="detail-aside">
-          {hasContact && <ContactCard contact={contact} />}
+          {hasContact && <ContactCard contact={contact} className="block-contact" />}
 
           {hasSalary && (
-            <section className="detail-card aside-card">
+            <section className="detail-card aside-card block-pay">
               <h2 className="aside-title">Vergütung</h2>
               {salaryEntries.length > 0 ? (
                 <ul className="salary-list">
@@ -435,7 +428,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
             </section>
           )}
 
-          <section className="detail-card aside-card">
+          <section className="detail-card aside-card block-facts">
             <h2 className="aside-title">Auf einen Blick</h2>
             <dl className="facts-list">
               {facts.map((f) => (
@@ -452,7 +445,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
             </dl>
           </section>
 
-          <section className="detail-card aside-card aside-employer">
+          <section className="detail-card aside-card aside-employer block-employer">
             <h2 className="aside-title">Arbeitgeber</h2>
             <div className="aside-employer-row">
               {logoUrl && !logoFailed ? (
@@ -462,9 +455,9 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
               )}
               <div>
                 <strong>{employer}</strong>
-                {typeof d.allianzpartnerUrl === 'string' && (
-                  <a href={toAbsoluteUrl(d.allianzpartnerUrl)} target="_blank" rel="noopener noreferrer" className="aside-link">
-                    {d.allianzpartnerUrl.replace(/^https?:\/\//i, '')}
+                {companyUrl && (
+                  <a href={companyUrl} target="_blank" rel="noopener noreferrer" className="aside-link">
+                    {companyUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
                   </a>
                 )}
               </div>
