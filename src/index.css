@@ -4249,14 +4249,6 @@ html {
   flex-direction: column;
 }
 
-.bewerbify-hint {
-  margin-top: 0.4rem;
-  padding: 0 0.15rem;
-  font-size: 0.78rem;
-  line-height: 1.35;
-  color: var(--text-muted);
-}
-
 /* ===== Infinite scroll end marker ===== */
 .scroll-end {
   display: flex;
@@ -4343,5 +4335,41 @@ html {
   .job-card-apply {
     flex: 1 0 100%;
     min-height: 46px;
+  }
+}
+
+/* ========================================================
+   PHONES / TABLETS: navbar leaves with the scroll and slides
+   back on scroll-up; the filter bar sticks to the top edge
+   ======================================================== */
+@media (max-width: 899px) {
+  /* Sticky with a negative top: scrolls away with the page, then stays out of sight.
+     Pinned (user scrolls up): top 0, so it slides back in. */
+  .app .navbar {
+    top: calc(-1 * var(--nav-h, 56px) - 2px);
+    transition: top 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .app.nav-pinned .navbar {
+    top: 0;
+  }
+
+  /* Filter bar: flush with the top edge, moves down while the navbar is shown */
+  .app .results-toolbar {
+    top: 0;
+    margin-top: 0;
+    padding-top: 0;
+    transition: top 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .app.nav-pinned .results-toolbar {
+    top: var(--nav-h, 56px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app .navbar,
+  .app .results-toolbar {
+    transition-duration: 0.01ms;
   }
 }

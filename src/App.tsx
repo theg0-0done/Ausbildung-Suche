@@ -26,6 +26,42 @@ export default function App() {
     window.scrollTo({ top: searchScroll.current, behavior: 'instant' });
   }, [activeRefnr]);
 
+  // Phones: the navbar scrolls away with the page and slides back in as soon as the user scrolls up
+  const navRef = useRef<HTMLElement>(null);
+  const [navPinned, setNavPinned] = useState(false);
+  useEffect(() => {
+    const phone = window.matchMedia('(max-width: 899px)');
+    let lastY = window.scrollY;
+    let frame = 0;
+
+    const update = () => {
+      frame = 0;
+      const y = Math.max(0, window.scrollY);
+      const delta = y - lastY;
+      if (Math.abs(delta) < 4) return; // ignore jitter
+      lastY = y;
+      setNavPinned(phone.matches && delta < 0);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+    // The filter bar sits right under the navbar while it is shown, so it needs the real height
+    const measure = () => {
+      const h = navRef.current?.getBoundingClientRect().height;
+      if (h) document.documentElement.style.setProperty('--nav-h', `${h}px`);
+    };
+    const resizeObserver = new ResizeObserver(measure);
+    if (navRef.current) resizeObserver.observe(navRef.current);
+
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      resizeObserver.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   const navigateToDetail = useCallback((refnr: string) => {
     if (!getRefnrFromUrl()) searchScroll.current = window.scrollY;
     const url = new URL(window.location.href);
@@ -43,11 +79,11 @@ export default function App() {
   }, []);
 
   return (
-    <div className={`app ${activeRefnr ? 'is-detail' : ''}`}>
+    <div className={`app ${activeRefnr ? 'is-detail' : ''} ${navPinned ? 'nav-pinned' : ''}`}>
       <Splash />
 
       {/* Navbar */}
-      <nav className="navbar">
+      <nav className="navbar" ref={navRef}>
         <a href="/" className="navbar-brand" onClick={(e) => { e.preventDefault(); navigateToSearch(); }}>
           <span>Ausbildungs<span className="gradient-text">Suche</span></span>
         </a>

@@ -343,9 +343,6 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
                   Mit Bewerbify bewerben
                   {ICON_EXTERNAL}
                 </a>
-                {!bewerbify.hasEmail && (
-                  <p className="bewerbify-hint">Keine E-Mail im Angebot. Du kannst sie bei Bewerbify selbst eintragen.</p>
-                )}
               </div>
               <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn secondary">
                 Jetzt bewerben
