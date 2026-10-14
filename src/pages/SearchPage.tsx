@@ -4,7 +4,7 @@ import JobCard from '../components/JobCard';
 import FilterSidebar from '../components/FilterSidebar';
 import ActiveFilters from '../components/ActiveFilters';
 import Icon from '../components/Icons';
-import { JobCardSkeleton, JobListSkeleton, MapSkeleton } from '../components/Skeletons';
+import { JobListSkeleton, MapSkeleton } from '../components/Skeletons';
 import { searchAusbildungen } from '../api';
 import { useEmailCheck } from '../hooks/useEmailCheck';
 import { matchesMinPay } from '../lib/pay';
@@ -83,6 +83,7 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
   const filtersRef = useRef(filters);
   const pageRef = useRef(1);
   const autoPages = useRef(0);
+  const loadingMoreRef = useRef(false);
 
   const runSearch = useCallback(async (next: JobFilters) => {
     searchRef.current?.abort();
@@ -119,6 +120,8 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
   }, []);
 
   const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     const controller = new AbortController();
     searchRef.current = controller;
     const target = pageRef.current + 1;
@@ -138,6 +141,7 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
       if (controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
     } finally {
+      loadingMoreRef.current = false;
       if (!controller.signal.aborted) setLoadingMore(false);
     }
   }, [lastQuery]);
@@ -252,6 +256,26 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
     () => describeWoOutput(woOutput, lastQuery.wo, lastQuery.umkreis),
     [woOutput, lastQuery.wo, lastQuery.umkreis]
   );
+  /** Anything still loading or being checked in the background: shown as one spinner below the offers */
+  const busy = scanning || loadingMore;
+
+  // Infinite scroll: load the next page when the end of the list comes into view.
+  // The observer is re-created after every page so a sentinel that is still visible triggers again.
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || loading || loadingMore || error || !hasMore) return;
+    if (emailActive && emailPending > 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void loadMore();
+      },
+      { rootMargin: '600px 0px' }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loading, loadingMore, error, hasMore, emailActive, emailPending, results.length, loadMore, view]);
+
   const mappable = useMemo(
     () => visible.filter((j) => typeof j.stellenlokationen?.[0]?.breite === 'number').length,
     [visible]
@@ -352,15 +376,6 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
 
           <ActiveFilters filters={filters} onRemove={handleRemoveFilter} />
 
-          {scanning && !loading && (
-            <p className="location-note info scan-note" role="status">
-              <span className="spinner-small scan-spinner" aria-hidden="true" />
-              {emailActive && emailPending > 0
-                ? `Prüfe Beschreibungen auf E-Mail-Adressen … noch ${fmt(emailPending)}`
-                : 'Suche weitere passende Angebote …'}
-            </p>
-          )}
-
           {locationNote && !loading && (
             <p className={`location-note ${locationNote.tone}`} role="status">
               <Icon name="pin" size={14} />
@@ -391,13 +406,6 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
                   onClick={() => onSelectJob(job.referenznummer)}
                 />
               ))}
-              {loadingMore && (
-                <>
-                  <JobCardSkeleton />
-                  <JobCardSkeleton />
-                  <JobCardSkeleton />
-                </>
-              )}
             </div>
           )}
 
@@ -440,11 +448,9 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
             </div>
           )}
 
-          {!loading && hasMore && (
-            <div className="load-more-container">
-              <button className="load-more-btn" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? <span className="spinner-small" /> : `Mehr laden (${fmt(results.length)} von ${fmt(reachable)})`}
-              </button>
+          {!loading && !error && (hasMore || busy) && results.length > 0 && (
+            <div className="scroll-end" ref={sentinelRef} role="status" aria-label="Weitere Angebote werden geladen">
+              <span className="spinner-bottom" aria-hidden="true" />
             </div>
           )}
         </div>

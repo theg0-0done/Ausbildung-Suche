@@ -27,8 +27,6 @@ function labelOf(options: { value: string; label: string }[], value: string, fal
 function buildChips(filters: JobFilters): Chip[] {
   const chips: Chip[] = [];
 
-  if (filters.was) chips.push({ key: 'was', label: `Was: ${filters.was}` });
-  if (filters.wo) chips.push({ key: 'wo', label: `Wo: ${filters.wo}` });
   if (filters.umkreis) chips.push({ key: 'umkreis', label: `+ ${filters.umkreis} km` });
 
   if (filters.angebotsart && filters.angebotsart !== '4') {

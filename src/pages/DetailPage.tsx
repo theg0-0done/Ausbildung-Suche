@@ -9,6 +9,7 @@ import DetailSection from '../components/DetailSection';
 import ContactCard from '../components/ContactCard';
 import { extractContact } from '../lib/contact';
 import { pickCompanyUrl, resolveApplyUrl } from '../lib/apply';
+import { bewerbifyForPosting } from '../lib/bewerbify';
 import RichContentRenderer from '../components/RichContentRenderer';
 import RecursiveFieldRenderer from '../components/RecursiveFieldRenderer';
 
@@ -248,6 +249,8 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
   const facts = factRows.filter((f) => f.value);
   const contact = extractContact(d.stellenangebotsBeschreibung);
   const hasContact = contact.emails.length > 0 || contact.phones.length > 0 || contact.people.length > 0;
+  // Pre-filled Bewerbify form: company, address, application e-mail, contact and text of this posting
+  const bewerbify = bewerbifyForPosting({ ...d, referenznummer: d.referenznummer || refnr }, contact);
   const showEmployerJobs = !!employerName && (employerJobs === null || employerJobs.length > 0);
 
   const backButton = (
@@ -333,13 +336,26 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
             </div>
 
             <div className="detail-actions" ref={actionsRef}>
-              <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn">
+              <div className="bewerbify-action">
+                <a href={bewerbify.url} target="_blank" rel="noopener" className="external-link-btn">
+                  Mit Bewerbify bewerben
+                  {ICON_EXTERNAL}
+                </a>
+                <p className={`bewerbify-hint ${bewerbify.hasEmail ? 'found' : ''}`}>
+                  {bewerbify.hasEmail
+                    ? 'E-Mail-Adresse gefunden'
+                    : 'Keine E-Mail im Angebot. Du kannst sie bei Bewerbify selbst eintragen.'}
+                </p>
+              </div>
+              <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn secondary">
                 Jetzt bewerben
                 {ICON_EXTERNAL}
               </a>
-              <a href={jobUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn secondary">
-                Auf Arbeitsagentur.de
-              </a>
+              {applyUrl !== jobUrl && (
+                <a href={jobUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn secondary">
+                  Auf Arbeitsagentur.de
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -467,8 +483,8 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
       </div>
 
       <div className={`sticky-apply ${showStickyApply ? 'visible' : ''}`} aria-hidden={!showStickyApply}>
-        <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn" tabIndex={showStickyApply ? 0 : -1}>
-          Jetzt bewerben
+        <a href={bewerbify.url} target="_blank" rel="noopener" className="external-link-btn" tabIndex={showStickyApply ? 0 : -1}>
+          Mit Bewerbify bewerben
           {ICON_EXTERNAL}
         </a>
       </div>

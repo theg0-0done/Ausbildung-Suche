@@ -11,8 +11,6 @@ interface JobCardProps {
   hasEmail?: boolean;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 function getTypeLabel(job: JobSearchItem): string {
   if (job.ausbildungsart === 'DUALES_STUDIUM') return 'Duales Studium';
   if (job.ausbildungsart === 'AUSBILDUNG') return 'Ausbildung';
@@ -31,13 +29,6 @@ function getWorkingTime(job: JobSearchItem): string {
   return '';
 }
 
-function isNew(job: JobSearchItem): boolean {
-  const from = job.datumErsteVeroeffentlichung;
-  if (typeof from !== 'string') return false;
-  const t = new Date(from).getTime();
-  return !Number.isNaN(t) && Date.now() - t < 7 * DAY_MS;
-}
-
 export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
   const [logoFailed, setLogoFailed] = useState(false);
   const employer = job.firma ?? '';
@@ -49,13 +40,11 @@ export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
   const typeLabel = getTypeLabel(job);
   const workingTime = getWorkingTime(job);
   const pay = getPayLabel(job);
-  const fresh = isNew(job);
 
   return (
-    <article className={`job-card ${fresh ? 'is-new' : ''}`} onClick={() => onClick(job)} tabIndex={0} role="button"
+    <article className="job-card" onClick={() => onClick(job)} tabIndex={0} role="button"
       onKeyDown={(e) => { if (e.key === 'Enter') onClick(job); }}
     >
-      {fresh && <span className="card-badge-new">Neu</span>}
       <div className="job-card-logo">
         {logoUrl && !logoFailed ? (
           <img
