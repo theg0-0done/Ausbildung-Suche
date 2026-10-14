@@ -449,9 +449,18 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
             </div>
           )}
 
-          {!loading && !error && (hasMore || busy) && results.length > 0 && (
+          {/* List: endless scroll. Map: the user loads the next 100 offers by hand */}
+          {!loading && !error && results.length > 0 && view === 'list' && (hasMore || busy) && (
             <div className="scroll-end" ref={sentinelRef} role="status" aria-label="Weitere Angebote werden geladen">
               <span className="spinner-bottom" aria-hidden="true" />
+            </div>
+          )}
+
+          {!loading && !error && results.length > 0 && view === 'map' && (hasMore || busy) && (
+            <div className="load-more-container">
+              <button className="load-more-btn" onClick={loadMore} disabled={busy}>
+                {busy ? <span className="spinner-bottom" aria-hidden="true" /> : `Mehr laden (${fmt(results.length)} von ${fmt(reachable)})`}
+              </button>
             </div>
           )}
         </div>
