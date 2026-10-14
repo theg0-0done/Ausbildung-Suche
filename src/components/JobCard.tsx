@@ -3,12 +3,15 @@ import type { JobSearchItem } from '../types';
 import { getLogoUrl } from '../api';
 import { getPayLabel } from '../lib/labels';
 import Icon from './Icons';
+import { buildBewerbify } from '../lib/bewerbify';
 
 interface JobCardProps {
   job: JobSearchItem;
   onClick: (job: JobSearchItem) => void;
   /** The description contains an e-mail address (known once the e-mail filter has checked it). */
   hasEmail?: boolean;
+  /** Addresses found in the description (known once the e-mail filter has checked it), used for the Bewerbify link. */
+  emails?: readonly string[];
 }
 
 function getTypeLabel(job: JobSearchItem): string {
@@ -29,7 +32,7 @@ function getWorkingTime(job: JobSearchItem): string {
   return '';
 }
 
-export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
+export default function JobCard({ job, onClick, hasEmail, emails }: JobCardProps) {
   const [logoFailed, setLogoFailed] = useState(false);
   const employer = job.firma ?? '';
   const initial = employer.charAt(0).toUpperCase() || '?';
@@ -40,10 +43,18 @@ export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
   const typeLabel = getTypeLabel(job);
   const workingTime = getWorkingTime(job);
   const pay = getPayLabel(job);
+  // The search result has no description, so the form is pre-filled with company, address and reference only
+  const bewerbifyUrl = buildBewerbify({
+    company: employer,
+    street: [addr?.strasse, addr?.hausnummer].filter(Boolean).join(' '),
+    city: location,
+    emails,
+    ref: job.referenznummer,
+  }).url;
 
   return (
     <article className="job-card" onClick={() => onClick(job)} tabIndex={0} role="button"
-      onKeyDown={(e) => { if (e.key === 'Enter') onClick(job); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) onClick(job); }}
     >
       <div className="job-card-logo">
         {logoUrl && !logoFailed ? (
@@ -92,11 +103,15 @@ export default function JobCard({ job, onClick, hasEmail }: JobCardProps) {
           )}
         </div>
       </div>
-      <div className="job-card-arrow" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </div>
+      <a
+        className="job-card-apply"
+        href={bewerbifyUrl}
+        target="_blank"
+        rel="noopener"
+        onClick={(e) => e.stopPropagation()}
+      >
+        Bewerben
+      </a>
     </article>
   );
 }

@@ -403,6 +403,7 @@ export default function SearchPage({ onSelectJob }: SearchPageProps) {
                   key={job.referenznummer}
                   job={job}
                   hasEmail={(emailsFound[job.referenznummer]?.length ?? 0) > 0}
+                  emails={emailsFound[job.referenznummer]}
                   onClick={() => onSelectJob(job.referenznummer)}
                 />
               ))}

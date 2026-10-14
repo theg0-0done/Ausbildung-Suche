@@ -8,8 +8,10 @@ import { DetailSkeleton, JobCardSkeleton } from '../components/Skeletons';
 import DetailSection from '../components/DetailSection';
 import ContactCard from '../components/ContactCard';
 import { extractContact } from '../lib/contact';
-import { pickCompanyUrl, resolveApplyUrl } from '../lib/apply';
+import { resolveApplyUrl } from '../lib/apply';
 import { bewerbifyForPosting } from '../lib/bewerbify';
+import PackedTags from '../components/PackedTags';
+import type { HeroTag } from '../components/PackedTags';
 import RichContentRenderer from '../components/RichContentRenderer';
 import RecursiveFieldRenderer from '../components/RecursiveFieldRenderer';
 
@@ -221,7 +223,6 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
 
   // The employer's own link when the offer has one; otherwise the offer page on arbeitsagentur.de
   const applyUrl = resolveApplyUrl([d.externeUrl, d.externeURL, d.allianzpartnerUrl], jobUrl);
-  const companyUrl = pickCompanyUrl([d.allianzpartnerUrl]);
 
   const typeLabel = [
     d.ausbildungsart ? ART_MAP[d.ausbildungsart] ?? d.ausbildungsart : 'Ausbildung',
@@ -251,6 +252,12 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
   const hasContact = contact.emails.length > 0 || contact.phones.length > 0 || contact.people.length > 0;
   // Pre-filled Bewerbify form: company, address, application e-mail, contact and text of this posting
   const bewerbify = bewerbifyForPosting({ ...d, referenznummer: d.referenznummer || refnr }, contact);
+  const heroTags: HeroTag[] = [
+    { label: typeLabel, className: 'tag tag-type' },
+    d.eintrittszeitraum?.von ? { label: `Ab ${formatDate(d.eintrittszeitraum.von)}`, className: 'tag' } : null,
+    locationStr ? { label: locationStr, className: 'tag' } : null,
+    workingTimes.length > 0 ? { label: workingTimes.join(' · '), className: 'tag' } : null,
+  ].filter((t): t is HeroTag => t !== null);
   const showEmployerJobs = !!employerName && (employerJobs === null || employerJobs.length > 0);
 
   const backButton = (
@@ -327,12 +334,7 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
             <div className="detail-header-info">
               <h1>{title}</h1>
               {employer && <p className="detail-company">{employer}</p>}
-              <div className="detail-tags">
-                <span className="tag tag-type">{typeLabel}</span>
-                {d.eintrittszeitraum?.von && <span className="tag">Ab {formatDate(d.eintrittszeitraum.von)}</span>}
-                {locationStr && <span className="tag">{locationStr}</span>}
-                {workingTimes.length > 0 && <span className="tag">{workingTimes.join(' · ')}</span>}
-              </div>
+              <PackedTags tags={heroTags} />
             </div>
 
             <div className="detail-actions" ref={actionsRef}>
@@ -341,21 +343,14 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
                   Mit Bewerbify bewerben
                   {ICON_EXTERNAL}
                 </a>
-                <p className={`bewerbify-hint ${bewerbify.hasEmail ? 'found' : ''}`}>
-                  {bewerbify.hasEmail
-                    ? 'E-Mail-Adresse gefunden'
-                    : 'Keine E-Mail im Angebot. Du kannst sie bei Bewerbify selbst eintragen.'}
-                </p>
+                {!bewerbify.hasEmail && (
+                  <p className="bewerbify-hint">Keine E-Mail im Angebot. Du kannst sie bei Bewerbify selbst eintragen.</p>
+                )}
               </div>
               <a href={applyUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn secondary">
                 Jetzt bewerben
                 {ICON_EXTERNAL}
               </a>
-              {applyUrl !== jobUrl && (
-                <a href={jobUrl} target="_blank" rel="noopener noreferrer" className="external-link-btn secondary">
-                  Auf Arbeitsagentur.de
-                </a>
-              )}
             </div>
           </div>
         </div>
@@ -461,24 +456,6 @@ export default function DetailPage({ refnr, onBack, onSelectJob }: DetailPagePro
             </dl>
           </section>
 
-          <section className="detail-card aside-card aside-employer block-employer">
-            <h2 className="aside-title">Arbeitgeber</h2>
-            <div className="aside-employer-row">
-              {logoUrl && !logoFailed ? (
-                <img src={logoUrl} alt="" className="aside-employer-logo" onError={() => setLogoFailed(true)} />
-              ) : (
-                <div className="logo-placeholder aside-employer-logo">{employer?.charAt(0)?.toUpperCase() || '?'}</div>
-              )}
-              <div>
-                <strong>{employer}</strong>
-                {companyUrl && (
-                  <a href={companyUrl} target="_blank" rel="noopener noreferrer" className="aside-link">
-                    {companyUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
-                  </a>
-                )}
-              </div>
-            </div>
-          </section>
         </aside>
       </div>
 

@@ -1,11 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Icon from './Icons';
 import type { IconName } from './Icons';
 import { toTelHref } from '../lib/contact';
 import type { ContactInfo } from '../lib/contact';
 
-/** Invisible break opportunity (U+200B), put after the @ so long addresses wrap in one clean place. */
-const ZERO_WIDTH_SPACE = String.fromCharCode(0x200b);
+/** Smallest font size (px) a value is shrunk to before it is cut off. */
+const MIN_FIT_FONT_PX = 9;
+
+/** Keeps a value on one line: the font shrinks step by step until the text fits its box. */
+function useFitOneLine<T extends HTMLElement>(text: string) {
+  const ref = useRef<T>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const fit = () => {
+      el.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      while (el.scrollWidth > el.clientWidth && size > MIN_FIT_FONT_PX) {
+        size -= 0.5;
+        el.style.fontSize = `${size}px`;
+      }
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text]);
+
+  return ref;
+}
 
 interface ContactCardProps {
   contact: ContactInfo;
@@ -25,12 +51,12 @@ interface RowProps {
 function ContactRow({ icon, label, href, copied, onCopy, copyValue }: RowProps) {
   const value = copyValue ?? label;
   const isCopied = copied === value;
+  const textRef = useFitOneLine<HTMLSpanElement>(label);
   return (
     <li className="contact-item">
       <a className="contact-mail" href={href}>
         <Icon name={icon} size={16} />
-        {/* A zero-width space after the @ gives long addresses one clean place to wrap */}
-        <span>{label.replace('@', `@${ZERO_WIDTH_SPACE}`)}</span>
+        <span ref={textRef} className="contact-text">{label}</span>
       </a>
       <button
         type="button"
